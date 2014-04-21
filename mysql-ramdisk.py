@@ -88,41 +88,41 @@ def calc_ramdisk_size(num_megabytes):
 
 
 def create_ramdisk(ramdisk_size, disk_path=RAMDISK_PATH):
-    print 'Creating ramdisk...'
+    print('Creating ramdisk... at %s' % disk_path)
     if is_linux():
-        size_in_mb = ramdisk_size * 512 / 1048576
+        size_in_mb = int(ramdisk_size * 512 / 1048576)
         # TODO: What if dir already exists? Destroy data?
         call(['sudo mkdir -p %s' % disk_path], shell=True)
-        call(['sudo mount -t tmpfs -o size=%sM tmpfs %s' % (size_in_mb, disk_path)],
+        call(['sudo mount -t tmpfs -o size=%sm tmpfs %s' % (size_in_mb, disk_path)],
              shell=True)
     else:
         disk_path = Popen('hdiutil attach -nomount ram://%s' % ramdisk_size, 
                           stdout=PIPE, shell=True).communicate()[0]
         Popen('diskutil eraseVolume HFS+ ramdisk %s' % disk_path, stdout=PIPE,
               shell=True).communicate()
-    print 'Done creating ramdisk: %s' % disk_path
+    print('Done creating ramdisk: %s' % disk_path)
 
 def kill_ramdisk(path_to_ramdisk):
     # TODO make sure that MySQL isn't running first!
     if is_linux():
         # TODO:
         # make this use path_to_ramdisk.
-        print "Unmounting ramdisk '%s'." % path_to_ramdisk
+        print("Unmounting ramdisk '%s'." % path_to_ramdisk)
         # Nonzero return codes are bad. Wouldn't want to accidently remove rm anything
         # other than the ramdisk.
         if call(['sudo umount %s' % path_to_ramdisk], shell=True):
             raise Exception("Unmounting of ramdisk at '%s' failed." \
                             % path_to_ramdisk)
 
-        print "Deleting ramdisk '%s'." % path_to_ramdisk
+        print("Deleting ramdisk '%s'." % path_to_ramdisk)
         call(['sudo rm -rf %s' % path_to_ramdisk], shell=True)
     else:
-        print Popen(('hdiutil detach %s' % path_to_ramdisk), stdout=PIPE, 
-                     shell=True).communicate()[0]
+        print(Popen(('hdiutil detach %s' % path_to_ramdisk), stdout=PIPE,
+                     shell=True).communicate()[0])
 
 def install_db(path_to_ramdisk=None):
     # TODO support other dbs?
-    print 'Installing new db...'
+    print('Installing new db...')
     if is_linux():
         call(['/usr/bin/mysql_install_db '
               '--user=mysql '
@@ -135,13 +135,13 @@ def install_db(path_to_ramdisk=None):
                   '--basedir=/usr/local/mysql '
                   '--datadir=/Volumes/ramdisk', shell=True)
         p.communicate()
-    print 'Done installing db.' 
+    print('Done installing db.' )
 
 
 def start_db(path_to_ramdisk=None):
     # TODO support other dbs?
     # TODO make it more configurable?
-    print 'Starting db...'
+    print('Starting db...')
     if is_linux():
         call(['sudo mysqld '
               '--basedir=/usr '
@@ -152,7 +152,7 @@ def start_db(path_to_ramdisk=None):
               '--port=3308 '
               '--socket=/tmp/mysql.ramdisk.sock &' % ((path_to_ramdisk,) * 3)], 
               stdout=PIPE, shell=True)
-        print "To log into mysql use: 'msyql --socket=/tmp/mysql.ramdisk.sock [OPTIONS]'"
+        print("To log into mysql use: 'msyql --socket=/tmp/mysql.ramdisk.sock [OPTIONS]'")
     else:
         p = Popen('/usr/local/mysql/bin/mysqld '
                   '--basedir=/usr/local/mysql '
@@ -163,7 +163,7 @@ def start_db(path_to_ramdisk=None):
                   '--port=3308 '
                   '--socket=/tmp/mysql.sock &', stdout=PIPE, shell=True)
         p.communicate()
-    print 'Done starting db.'
+    print('Done starting db.')
 
 if __name__ == "__main__":
     main()
